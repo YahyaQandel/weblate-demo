@@ -1,0 +1,48 @@
+services:
+  cache:
+    image: redis:alpine
+    volumes:
+      - redis_data:/data
+    networks:
+      - weblate-net
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: weblate
+      POSTGRES_USER: weblate
+      POSTGRES_PASSWORD: weblate
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - weblate-net
+  weblate:
+    image: weblate/weblate:latest
+    depends_on:
+      - cache
+      - postgres
+    ports:
+      - "8080:8080"
+    environment:
+      WEBLATE_SITE_TITLE: "Local Weblate"
+      WEBLATE_SITE_DOMAIN: "localhost:8080"  # Add this line
+      WEBLATE_ADMIN_PASSWORD: "admin123"  # Change this!
+      POSTGRES_HOST: postgres
+      POSTGRES_DATABASE: weblate
+      POSTGRES_USER: weblate
+      POSTGRES_PASSWORD: weblate
+      WEBLATE_GUNICORN_HOST: "0.0.0.0"  # Bind to all interfaces
+      WEBLATE_GUNICORN_PORT: "8000"     # Use TCP port 8000
+
+    user: "root"  # Match your host's user ID to avoid permission issues
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - weblate-net
+
+networks:
+  weblate-net:
+
+volumes:
+  redis_data:
+  postgres_data:
+  weblate_data:
